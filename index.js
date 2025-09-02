@@ -95,9 +95,8 @@ async function revisarRegistros() {
       JOIN qdocumento_fichero ON qdocumento.doccon = qdocumento_fichero.qdocumento_id
       WHERE (qdocumento.docenviado = 0 OR qdocumento.docenviado IS NULL OR qdocumento.docenviado = '')
         AND qdocumento.doctip = "FC"
-        AND qdocumento.docfec >= '2025-07-02'
+        AND qdocumento.docfec >= '2025-09-02'
       ORDER BY qdocumento.doccon DESC
-      LIMIT 1
     `);
 
     if (!rows || rows.length === 0) {
@@ -126,8 +125,7 @@ async function revisarRegistros() {
 
       const message = {
         from: `"QNotify" <${process.env.MAIL_USER}>`,
-        // to: row.email,
-        to: "jluiscontreras95@gmail.com",
+        to: row.email,
         subject: "Notificación automática",
         html,
       };
