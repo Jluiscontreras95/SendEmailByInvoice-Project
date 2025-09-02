@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <title>Notificación de Nueva Factura - Redes y Componentes</title>
+    <style>
+      body {
+        font-family: "Segoe UI", Arial, sans-serif;
+        background: #f4f6f8;
+        color: #222;
+        margin: 0;
+        padding: 0;
+      }
+      .container {
+        max-width: 520px;
+        margin: 40px auto;
+        background: #fff;
+        border-radius: 10px;
+        box-shadow: 0 4px 16px rgba(25, 118, 210, 0.1);
+        padding: 36px 32px 28px 32px;
+        border: 1px solid #e3e8ee;
+      }
+      .header {
+        border-bottom: 1.5px solid #e0e0e0;
+        padding-bottom: 18px;
+        margin-bottom: 28px;
+        text-align: center;
+      }
+      .logo {
+        width: 60px;
+        height: 60px;
+        margin-bottom: 8px;
+        border-radius: 50%;
+        background: #1976d2;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .logo span {
+        color: #fff;
+        font-size: 32px;
+        font-weight: bold;
+        font-family: Arial, sans-serif;
+        letter-spacing: 1px;
+      }
+      .header h2 {
+        margin: 0;
+        color: #1976d2;
+        font-weight: 700;
+        font-size: 1.5em;
+      }
+      .header .company {
+        color: #444;
+        font-size: 1.1em;
+        margin-top: 4px;
+        font-weight: 500;
+        letter-spacing: 0.5px;
+      }
+      .content {
+        font-size: 16px;
+        line-height: 1.7;
+        color: #333;
+      }
+      .btn {
+        display: inline-block;
+        background: linear-gradient(90deg, #1976d2 0%, #2196f3 100%);
+        color: #fff !important;
+        padding: 13px 32px;
+        margin: 28px 0 0 0;
+        text-decoration: none;
+        border-radius: 5px;
+        font-weight: 600;
+        font-size: 17px;
+        box-shadow: 0 2px 8px rgba(25, 118, 210, 0.1);
+        transition: background 0.2s;
+        letter-spacing: 0.5px;
+      }
+      .btn:hover {
+        background: linear-gradient(90deg, #125ea7 0%, #1976d2 100%);
+      }
+      .footer {
+        margin-top: 36px;
+        font-size: 13px;
+        color: #888;
+        text-align: center;
+        border-top: 1px solid #e0e0e0;
+        padding-top: 16px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="header">
+        <div class="logo">
+          <span>RC</span>
+        </div>
+        <h2>Notificación de Nueva Factura</h2>
+        <div class="company">Redes y Componentes</div>
+      </div>
+      <div class="content">
+        <p>Estimado/a <b>{{nombre}}</b>,</p>
+        <p>
+          Le informamos que se ha generado una nueva factura con el ID
+          <b>{{doccon}}</b> en nuestro sistema.
+        </p>
+        <p>Puede consultar el documento haciendo clic en el siguiente botón:</p>
+        <a class="btn" href="{{link}}">Ver documento</a>
+      </div>
+      <div class="footer">
+        Este correo fue generado automáticamente por
+        <b>Redes y Componentes</b>.<br />
+        Por favor, no responda a este mensaje.
+      </div>
+    </div>
+  </body>
+</html>

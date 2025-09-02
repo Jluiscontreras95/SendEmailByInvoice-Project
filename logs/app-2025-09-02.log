@@ -1,0 +1,17 @@
+[2025-09-02T09:29:00.051Z] ⏳ Revisando registros...
+[2025-09-02T09:29:00.421Z] 🔑 Token generado para usuario 430001198@gabinetetic.com: ff60e51969b03b837af2d639cc60eb1437942023536f2d42979a6410644f9121
+[2025-09-02T09:29:01.327Z] 📩 Correo enviado a 430001198@gabinetetic.com (Doccon: 7097) | MessageId: <3f8e92f1-984d-37a2-ca6f-a8f4b7909e0d@gabinetetic.com>
+[2025-09-02T09:29:02.395Z] 📥 Correo guardado en carpeta Enviados
+[2025-09-02T09:29:02.436Z] ✅ Registro doccon 7097 marcado como enviado
+[2025-09-02T09:32:00.029Z] [INFO] ⏳ Iniciando revisión de registros...
+[2025-09-02T09:32:01.318Z] [INFO] 📩 Correo enviado a 430001198@gabinetetic.com (Doccon: 7097)
+[2025-09-02T09:32:02.193Z] [INFO] 📥 Correo guardado en carpeta Enviados
+[2025-09-02T09:37:00.047Z] [INFO] Proceso de revisión iniciado
+[2025-09-02T09:37:00.415Z] [INFO] Token generado para usuario 365
+[2025-09-02T09:37:01.282Z] [INFO] Correo enviado a 430001198@gabinetetic.com (Doccon: 7097)
+[2025-09-02T09:37:02.132Z] [INFO] Correo guardado en carpeta Enviados
+[2025-09-02T09:37:02.196Z] [INFO] Registro doccon 7097 marcado como enviado
+[2025-09-02T09:37:02.197Z] [INFO] Proceso de revisión finalizado
+[2025-09-02T09:41:00.526Z] [INFO] Token generado para usuario 430001198@gabinetetic.com: ca2b250b0378ad03557dad0e3c53145961450fca1bba68f2aa084d43c38ce1ae
+[2025-09-02T09:41:01.345Z] [INFO] Correo enviado a 430001198@gabinetetic.com (Doccon: 7097) | MessageId: <d287acc8-cd52-2dad-d2a0-8104a395d481@gabinetetic.com>
+[2025-09-02T09:41:02.087Z] [INFO] Correo guardado en carpeta Enviados
