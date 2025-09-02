@@ -87,7 +87,7 @@ async function guardarEnEnviados(raw) {
 async function revisarRegistros() {
   try {
     const [rows] = await db.query(`
-      SELECT qdocumento.doccon, qdocumento.docclicod, qdocumento.docenviado,
+      SELECT qdocumento.doccon, qdocumento.docclicod, qdocumento.docenviado, qdocumento.doceje, qdocumento.docfec, qdocumento.docimptot,
              qdocumento_fichero.qdocumento_id,
              users.name, users.email, users.id
       FROM qdocumento
@@ -120,6 +120,9 @@ async function revisarRegistros() {
         nombre: row.name || "usuario",
         doccon: row.doccon,
         docid: row.qdocumento_id,
+        doceje: row.doceje,
+        docfec: row.docfec,
+        docimptot: row.docimptot,
         link: link,
       });
 
