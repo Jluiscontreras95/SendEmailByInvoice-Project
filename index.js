@@ -131,7 +131,6 @@ async function revisarRegistros() {
       const message = {
         from: `"QNotify" <${process.env.MAIL_USER}>`,
         to: row.email,
-        cc: "mawel@redesycomponentes.com",
         subject: "Notificación automática",
         html,
       };
