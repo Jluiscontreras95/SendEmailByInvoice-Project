@@ -4949,3 +4949,9 @@ Expecting 'CLOSE_RAW_BLOCK', 'CLOSE', 'CLOSE_UNESCAPED', 'OPEN_SEXPR', 'CLOSE_SE
 [2025-09-03T17:00:00.276Z] [INFO] Token generado para usuario embutidosarriaza@gmail.com: 9d27d179b09797056983c32acb073e7a83fdae6b10567bfdc046bf651990385b
 [2025-09-03T17:00:04.801Z] [INFO] Correo enviado a embutidosarriaza@gmail.com (Doccon: 7141) | MessageId: <018b3917-723e-a251-84f4-4a00b3692669@gabinetetic.com>
 [2025-09-03T17:00:04.806Z] [ERROR] Error revisando registros: Can not re-use ImapFlow instance
+[2025-09-03T17:01:00.589Z] [INFO] Token generado para usuario embutidosarriaza@gmail.com: 05b2eb09e1365b246b9e9158428b711d35e8468f74e6062fa009a0cf9232e3ff
+[2025-09-03T17:01:05.034Z] [INFO] Correo enviado a embutidosarriaza@gmail.com (Doccon: 7141) | MessageId: <3bc39e6f-9e7b-924e-044d-95fc61a99633@gabinetetic.com>
+[2025-09-03T17:01:05.035Z] [ERROR] Error revisando registros: Can not re-use ImapFlow instance
+[2025-09-03T17:02:00.304Z] [INFO] Token generado para usuario embutidosarriaza@gmail.com: 0c387ebdb0b323fea2edec5eca0ba52bf5f33cb193b23e5f6bc184935309f1d1
+[2025-09-03T17:02:01.002Z] [INFO] Correo enviado a embutidosarriaza@gmail.com (Doccon: 7141) | MessageId: <afe9b176-d10d-fb68-ef3a-b4cdc1b3d5fd@gabinetetic.com>
+[2025-09-03T17:02:01.005Z] [ERROR] Error revisando registros: Can not re-use ImapFlow instance
