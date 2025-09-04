@@ -149,6 +149,11 @@ async function revisarRegistros() {
         year: "numeric",
       }).format(fecha);
 
+      // actualizar primero y luego enviar correo
+      await db.query("UPDATE qdocumento SET docenviado = 1 WHERE doccon = ?", [
+        row.doccon,
+      ]);
+
       const html = templates.notification({
         nombre: row.name || "usuario",
         doccon: row.doccon,
@@ -177,10 +182,6 @@ async function revisarRegistros() {
         const rawMessage = await generarRaw(message);
         await guardarEnEnviados(rawMessage);
       }
-
-      await db.query("UPDATE qdocumento SET docenviado = 1 WHERE doccon = ?", [
-        row.doccon,
-      ]);
     }
 
     // presupuestos
@@ -215,6 +216,11 @@ async function revisarRegistros() {
         link: link,
       });
 
+      // actualizar primero y luego enviar correo
+      await db.query("UPDATE qdocumento SET docenviado = 1 WHERE doccon = ?", [
+        row.doccon,
+      ]);
+
       const message = {
         from: `"Redes y Componentes" <${process.env.MAIL_USER}>`,
         to: row.email,
@@ -231,10 +237,6 @@ async function revisarRegistros() {
         const rawMessage = await generarRaw(message);
         await guardarEnEnviados(rawMessage);
       }
-
-      await db.query("UPDATE qdocumento SET docenviado = 1 WHERE doccon = ?", [
-        row.doccon,
-      ]);
     }
   } catch (err) {
     log(`Error revisando registros: ${err.message}`, "ERROR");
