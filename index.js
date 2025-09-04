@@ -163,8 +163,7 @@ async function revisarRegistros() {
 
       const message = {
         from: `"Redes y Componentes" <${process.env.MAIL_USER}>`,
-        // to: row.email,
-        to: "web.jorge@redesycomponentes.com",
+        to: row.email,
         subject: "Notificación automática",
         html,
       };
@@ -218,8 +217,7 @@ async function revisarRegistros() {
 
       const message = {
         from: `"Redes y Componentes" <${process.env.MAIL_USER}>`,
-        // to: row.email,
-        to: "web.jorge@redesycomponentes.com",
+        to: row.email,
         subject: "Notificación automática",
         html,
       };
