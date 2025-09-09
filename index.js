@@ -97,9 +97,11 @@ async function revisarRegistros() {
     const [rows] = await db.query(`
       SELECT qdocumento.doccon, qdocumento.docclicod, qdocumento.docenviado, qdocumento.doceje, qdocumento.docser, qdocumento.docnum, qdocumento.docfec, qdocumento.docimptot,
              qdocumento_fichero.qdocumento_id,
-             users.name, users.email, users.id
+             users.name, users.email, users.id,
+             qanet_clienteagenda.ageema, qanet_clienteagenda.agefuncion
       FROM qdocumento
       JOIN users ON qdocumento.docclicod = users.usuclicod
+      JOIN qanet_clienteagenda ON qdocumento.docclicod = qanet_clienteagenda.ageclicod AND qanet_clienteagenda.agefuncion IN (4,60)  AND qanet_clienteagenda.ageema IS NOT NULL
       JOIN qdocumento_fichero ON qdocumento.doccon = qdocumento_fichero.qdocumento_id
       WHERE (qdocumento.docenviado = 0 OR qdocumento.docenviado IS NULL OR qdocumento.docenviado = '')
         AND qdocumento.doctip = "FC"
@@ -111,9 +113,11 @@ async function revisarRegistros() {
     const [rowsBudget] = await db.query(`
       SELECT qdocumento.doccon, qdocumento.docclicod, qdocumento.docenviado, qdocumento.doceje, qdocumento.docser, qdocumento.docnum, qdocumento.docfec, qdocumento.docimptot,
              qdocumento_fichero.qdocumento_id,
-             users.name, users.email, users.id
+             users.name, users.email, users.id,
+             qanet_clienteagenda.ageema, qanet_clienteagenda.agefuncion
       FROM qdocumento
       JOIN users ON qdocumento.docclicod = users.usuclicod
+      JOIN qanet_clienteagenda ON qdocumento.docclicod = qanet_clienteagenda.ageclicod AND qanet_clienteagenda.agefuncion IN (1,60)  AND qanet_clienteagenda.ageema IS NOT NULL
       JOIN qdocumento_fichero ON qdocumento.doccon = qdocumento_fichero.qdocumento_id
       WHERE (qdocumento.docenviado = 0 OR qdocumento.docenviado IS NULL OR qdocumento.docenviado = '')
         AND qdocumento.doctip = "PC"
@@ -131,17 +135,6 @@ async function revisarRegistros() {
 
     // facturación
     for (const row of rows) {
-      const token = crypto.randomBytes(32).toString("hex");
-
-      const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
-      await db.query(
-        `INSERT INTO access_tokens (user_id, token, expires_at, created_at, updated_at) VALUES (?, ?, ?, NOW(), NOW())`,
-        [row.id, token, expiresAt]
-      );
-      log(`Token generado para usuario ${row.email}: ${token}`);
-
-      const link = `https://gabinetetic.com/documentos/Facturas?token=${token}`;
-
       const fecha = new Date(row.docfec);
       const fechaFormateada = new Intl.DateTimeFormat("es-ES", {
         day: "2-digit",
@@ -149,10 +142,30 @@ async function revisarRegistros() {
         year: "numeric",
       }).format(fecha);
 
+      const token = crypto.randomBytes(32).toString("hex");
+      const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+
+      const link = `https://gabinetetic.com/documentos/Facturas?token=${token}`;
+
+      await db.query(
+        `INSERT INTO access_tokens (user_id, token, expires_at, created_at, updated_at) VALUES (?, ?, ?, NOW(), NOW())`,
+        [row.id, token, expiresAt]
+      );
+
+      log(`Token generado para usuario ${row.name}: ${token}`);
+
       // actualizar primero y luego enviar correo
       await db.query("UPDATE qdocumento SET docenviado = 1 WHERE doccon = ?", [
         row.doccon,
       ]);
+
+      // Obtener array de emails de agendados filtrados por función
+      const agendadosEmails = row.agendados_email
+        ? row.agendados_email
+            .split(",")
+            .map((e) => e.trim())
+            .filter((e) => e.length > 0) // 🔹 descartar vacíos
+        : [];
 
       const html = templates.notification({
         nombre: row.name || "usuario",
@@ -169,13 +182,17 @@ async function revisarRegistros() {
       const message = {
         from: `"Redes y Componentes" <${process.env.MAIL_USER}>`,
         to: row.email,
+        cc: agendadosEmails,
         subject: "Notificación automática",
         html,
       };
 
       const info = await transporter.sendMail(message);
+
       log(
-        `Correo enviado a ${row.email} (Doccon: ${row.doccon}) | MessageId: ${info.messageId}`
+        `Correo enviado a ${row.email} con copia a [${agendadosEmails.join(
+          ", "
+        )}] (Doccon: ${row.doccon}) | MessageId: ${info.messageId}`
       );
 
       if (info.messageId) {
@@ -186,23 +203,32 @@ async function revisarRegistros() {
 
     // presupuestos
     for (const row of rowsBudget) {
-      const token = crypto.randomBytes(32).toString("hex");
-
-      const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
-      await db.query(
-        `INSERT INTO access_tokens (user_id, token, expires_at, created_at, updated_at) VALUES (?, ?, ?, NOW(), NOW())`,
-        [row.id, token, expiresAt]
-      );
-      log(`Token generado para usuario ${row.email}: ${token}`);
-
-      const link = `https://gabinetetic.com/documentos/Presupuestos?token=${token}`;
-
       const fecha = new Date(row.docfec);
       const fechaFormateada = new Intl.DateTimeFormat("es-ES", {
         day: "2-digit",
         month: "2-digit",
         year: "numeric",
       }).format(fecha);
+
+      const token = crypto.randomBytes(32).toString("hex");
+      const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+
+      const link = `https://gabinetetic.com/documentos/Presupuestos?token=${token}`;
+
+      await db.query(
+        `INSERT INTO access_tokens (user_id, token, expires_at, created_at, updated_at) VALUES (?, ?, ?, NOW(), NOW())`,
+        [row.id, token, expiresAt]
+      );
+
+      log(`Token generado para usuario ${row.name}: ${token}`);
+
+      // Obtener array de emails de agendados filtrados por función
+      const agendadosEmails = row.agendados_email
+        ? row.agendados_email
+            .split(",")
+            .map((e) => e.trim())
+            .filter((e) => e.length > 0) // 🔹 descartar vacíos
+        : [];
 
       const html = templates.budget({
         nombre: row.name || "usuario",
@@ -224,13 +250,15 @@ async function revisarRegistros() {
       const message = {
         from: `"Redes y Componentes" <${process.env.MAIL_USER}>`,
         to: row.email,
+        cc: agendadosEmails,
         subject: "Notificación automática",
         html,
       };
 
       const info = await transporter.sendMail(message);
+
       log(
-        `Correo enviado a ${row.email} (Doccon: ${row.doccon}) | MessageId: ${info.messageId}`
+        `Correo enviado a ${row.name} (Doccon: ${row.doccon}) | MessageId: ${info.messageId}`
       );
 
       if (info.messageId) {
