@@ -181,8 +181,7 @@ async function revisarRegistros() {
       // Enviar correo
       const message = {
         from: `"Redes y Componentes" <${process.env.MAIL_USER}>`,
-        to: row.email,
-        cc: agendadosEmails,
+        to: agendadosEmails,
         subject: "Notificación automática",
         html,
       };
@@ -256,8 +255,7 @@ async function revisarRegistros() {
       // Enviar correo
       const message = {
         from: `"Redes y Componentes" <${process.env.MAIL_USER}>`,
-        to: row.email,
-        cc: agendadosEmails,
+        to: agendadosEmails,
         subject: "Notificación automática",
         html,
       };
