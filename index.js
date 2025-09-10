@@ -179,9 +179,14 @@ async function revisarRegistros() {
         .filter((e) => e && e.length > 0);
 
       // Enviar correo
+      const recipients =
+        agendadosEmails && agendadosEmails.length > 0
+          ? agendadosEmails.join(", ")
+          : row.email;
+
       const message = {
         from: `"Redes y Componentes" <${process.env.MAIL_USER}>`,
-        to: agendadosEmails.join(", "),
+        to: recipients,
         subject: "Notificación automática",
         html,
       };
@@ -189,11 +194,7 @@ async function revisarRegistros() {
       const info = await transporter.sendMail(message);
 
       log(
-        `Correo enviado a ${row.name} (Doccon: ${
-          row.doccon
-        }) y a los agendados [${agendadosEmails.join(", ")}]  | MessageId: ${
-          info.messageId
-        }`
+        `Correo enviado a ${row.name} (Doccon: ${row.doccon}) y a los correos [${recipients}]  | MessageId: ${info.messageId}`
       );
 
       // Guardar el correo en la carpeta "Enviados" si fue enviado correctamente
@@ -253,9 +254,14 @@ async function revisarRegistros() {
       ]);
 
       // Enviar correo
+      const recipients =
+        agendadosEmails && agendadosEmails.length > 0
+          ? agendadosEmails.join(", ")
+          : row.email;
+
       const message = {
         from: `"Redes y Componentes" <${process.env.MAIL_USER}>`,
-        to: agendadosEmails.join(", "),
+        to: recipients,
         subject: "Notificación automática",
         html,
       };
@@ -263,11 +269,7 @@ async function revisarRegistros() {
       const info = await transporter.sendMail(message);
 
       log(
-        `Correo enviado a ${row.name} (Doccon: ${
-          row.doccon
-        }) y a los agendados [${agendadosEmails.join(", ")}]  | MessageId: ${
-          info.messageId
-        }`
+        `Correo enviado a ${row.name} (Doccon: ${row.doccon}) y a los correos [${recipients}]  | MessageId: ${info.messageId}`
       );
 
       // Guardar el correo en la carpeta "Enviados" si fue enviado correctamente
