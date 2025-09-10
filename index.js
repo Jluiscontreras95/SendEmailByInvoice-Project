@@ -10,10 +10,10 @@ import { ImapFlow } from "imapflow";
 
 dotenv.config();
 
-// 🔹 Carpeta de logs
+// 🔹 Crear carpeta de logs si no existe
 if (!fs.existsSync("logs")) fs.mkdirSync("logs");
 
-// 🔹 Función para escribir logs
+// 🔹 Función para escribir mensajes en los logs
 function log(message, level = "INFO") {
   const now = new Date();
   const date = now.toISOString().split("T")[0];
@@ -22,7 +22,7 @@ function log(message, level = "INFO") {
   fs.appendFileSync(`logs/app-${date}.log`, logMessage);
 }
 
-// 🔹 Cargar plantilla
+// 🔹 Cargar y compilar plantillas de correo
 const templateSources = {
   notification: fs.readFileSync("templates/notification.html", "utf-8"),
   budget: fs.readFileSync("templates/notification-budget.html", "utf-8"),
@@ -33,7 +33,7 @@ const templates = {
   budget: handlebars.compile(templateSources.budget),
 };
 
-// 🔹 Conexión a MySQL
+// 🔹 Configuración de conexión a MySQL
 const db = mysql.createPool({
   host: process.env.DB_HOST,
   user: process.env.DB_USER,
@@ -41,7 +41,7 @@ const db = mysql.createPool({
   database: process.env.DB_NAME,
 });
 
-// 🔹 Configuración del transporte de correo (SMTP)
+// 🔹 Configuración del transporte SMTP para envío de correos
 const transporter = nodemailer.createTransport({
   host: process.env.MAIL_HOST,
   port: process.env.MAIL_PORT,
@@ -50,11 +50,11 @@ const transporter = nodemailer.createTransport({
     user: process.env.MAIL_USER,
     pass: process.env.MAIL_PASS,
   },
-  logger: false, // no imprimir logs en consola
+  logger: false,
   debug: false,
 });
 
-// 🔹 Configuración IMAP
+// 🔹 Configuración del cliente IMAP para guardar correos enviados
 const imapClient = new ImapFlow({
   host: process.env.IMAP_HOST,
   port: process.env.IMAP_PORT,
@@ -63,10 +63,10 @@ const imapClient = new ImapFlow({
     user: process.env.MAIL_USER,
     pass: process.env.MAIL_PASS,
   },
-  logger: false, // silencia logs de imapflow
+  logger: false,
 });
 
-// 🔹 Generar mensaje raw para guardar en IMAP
+// 🔹 Generar mensaje raw (formato RFC822) para guardar en IMAP
 async function generarRaw(message) {
   return new Promise((resolve, reject) => {
     const mail = new MailComposer(message);
@@ -77,7 +77,7 @@ async function generarRaw(message) {
   });
 }
 
-// 🔹 Guardar en "Sent"
+// 🔹 Guardar el correo enviado en la carpeta "Enviados" de IMAP
 async function guardarEnEnviados(raw) {
   await imapClient.connect();
   try {
@@ -90,37 +90,33 @@ async function guardarEnEnviados(raw) {
   }
 }
 
-// 🔹 Revisar registros nuevos
+// 🔹 Revisar y procesar nuevos registros de facturas y presupuestos
 async function revisarRegistros() {
   try {
-    // Facturación
+    // Consultar facturas pendientes de envío
     const [rows] = await db.query(`
       SELECT qdocumento.doccon, qdocumento.docclicod, qdocumento.docenviado, qdocumento.doceje, qdocumento.docser, qdocumento.docnum, qdocumento.docfec, qdocumento.docimptot,
              qdocumento_fichero.qdocumento_id,
-             users.name, users.email, users.id,
-             qanet_clienteagenda.ageema, qanet_clienteagenda.agefuncion
+             users.name, users.email, users.id
       FROM qdocumento
       JOIN users ON qdocumento.docclicod = users.usuclicod
-      JOIN qanet_clienteagenda ON qdocumento.docclicod = qanet_clienteagenda.ageclicod AND qanet_clienteagenda.agefuncion IN (4,60)  AND qanet_clienteagenda.ageema IS NOT NULL
       JOIN qdocumento_fichero ON qdocumento.doccon = qdocumento_fichero.qdocumento_id
       WHERE (qdocumento.docenviado = 0 OR qdocumento.docenviado IS NULL OR qdocumento.docenviado = '')
-        AND qdocumento.doctip = "FC"
+        AND qdocumento.doctip = 'FC'
         AND qdocumento.docfec >= '2025-09-02'
       ORDER BY qdocumento.doccon DESC 
     `);
 
-    // Presupuestos
+    // Consultar presupuestos pendientes de envío
     const [rowsBudget] = await db.query(`
       SELECT qdocumento.doccon, qdocumento.docclicod, qdocumento.docenviado, qdocumento.doceje, qdocumento.docser, qdocumento.docnum, qdocumento.docfec, qdocumento.docimptot,
              qdocumento_fichero.qdocumento_id,
-             users.name, users.email, users.id,
-             qanet_clienteagenda.ageema, qanet_clienteagenda.agefuncion
+             users.name, users.email, users.id
       FROM qdocumento
       JOIN users ON qdocumento.docclicod = users.usuclicod
-      JOIN qanet_clienteagenda ON qdocumento.docclicod = qanet_clienteagenda.ageclicod AND qanet_clienteagenda.agefuncion IN (1,60)  AND qanet_clienteagenda.ageema IS NOT NULL
       JOIN qdocumento_fichero ON qdocumento.doccon = qdocumento_fichero.qdocumento_id
       WHERE (qdocumento.docenviado = 0 OR qdocumento.docenviado IS NULL OR qdocumento.docenviado = '')
-        AND qdocumento.doctip = "PC"
+        AND qdocumento.doctip = 'PC'
         AND qdocumento.docfec >= '2025-09-02'
       ORDER BY qdocumento.doccon DESC 
     `);
@@ -133,7 +129,7 @@ async function revisarRegistros() {
       return;
     }
 
-    // facturación
+    // Procesar facturas
     for (const row of rows) {
       const fecha = new Date(row.docfec);
       const fechaFormateada = new Intl.DateTimeFormat("es-ES", {
@@ -154,18 +150,10 @@ async function revisarRegistros() {
 
       log(`Token generado para usuario ${row.name}: ${token}`);
 
-      // actualizar primero y luego enviar correo
+      // Marcar como enviado antes de enviar el correo
       await db.query("UPDATE qdocumento SET docenviado = 1 WHERE doccon = ?", [
         row.doccon,
       ]);
-
-      // Obtener array de emails de agendados filtrados por función
-      const agendadosEmails = row.agendados_email
-        ? row.agendados_email
-            .split(",")
-            .map((e) => e.trim())
-            .filter((e) => e.length > 0) // 🔹 descartar vacíos
-        : [];
 
       const html = templates.notification({
         nombre: row.name || "usuario",
@@ -179,6 +167,18 @@ async function revisarRegistros() {
         link: link,
       });
 
+      // Obtener emails agendados para este cliente
+      const [agendadosRows] = await db.query(
+        `SELECT ageema FROM qanet_clienteagenda WHERE ageclicod = ? AND agefuncion IN ('4','60')`,
+        [row.docclicod]
+      );
+
+      // Limpiar emails nulos o vacíos
+      const agendadosEmails = agendadosRows
+        .map((r) => r.ageema && r.ageema.trim())
+        .filter((e) => e && e.length > 0);
+
+      // Enviar correo
       const message = {
         from: `"Redes y Componentes" <${process.env.MAIL_USER}>`,
         to: row.email,
@@ -190,18 +190,21 @@ async function revisarRegistros() {
       const info = await transporter.sendMail(message);
 
       log(
-        `Correo enviado a ${row.email} con copia a [${agendadosEmails.join(
-          ", "
-        )}] (Doccon: ${row.doccon}) | MessageId: ${info.messageId}`
+        `Correo enviado a ${row.name} (Doccon: ${
+          row.doccon
+        }) y a los agendados [${agendadosEmails.join(", ")}]  | MessageId: ${
+          info.messageId
+        }`
       );
 
+      // Guardar el correo en la carpeta "Enviados" si fue enviado correctamente
       if (info.messageId) {
         const rawMessage = await generarRaw(message);
         await guardarEnEnviados(rawMessage);
       }
     }
 
-    // presupuestos
+    // Procesar presupuestos
     for (const row of rowsBudget) {
       const fecha = new Date(row.docfec);
       const fechaFormateada = new Intl.DateTimeFormat("es-ES", {
@@ -222,13 +225,16 @@ async function revisarRegistros() {
 
       log(`Token generado para usuario ${row.name}: ${token}`);
 
-      // Obtener array de emails de agendados filtrados por función
-      const agendadosEmails = row.agendados_email
-        ? row.agendados_email
-            .split(",")
-            .map((e) => e.trim())
-            .filter((e) => e.length > 0) // 🔹 descartar vacíos
-        : [];
+      // Obtener emails agendados para este cliente
+      const [agendadosRows] = await db.query(
+        `SELECT ageema FROM qanet_clienteagenda WHERE ageclicod = ? AND agefuncion IN ('1','60')`,
+        [row.docclicod]
+      );
+
+      // Limpiar emails nulos o vacíos
+      const agendadosEmails = agendadosRows
+        .map((r) => r.ageema && r.ageema.trim())
+        .filter((e) => e && e.length > 0);
 
       const html = templates.budget({
         nombre: row.name || "usuario",
@@ -242,11 +248,12 @@ async function revisarRegistros() {
         link: link,
       });
 
-      // actualizar primero y luego enviar correo
+      // Marcar como enviado antes de enviar el correo
       await db.query("UPDATE qdocumento SET docenviado = 1 WHERE doccon = ?", [
         row.doccon,
       ]);
 
+      // Enviar correo
       const message = {
         from: `"Redes y Componentes" <${process.env.MAIL_USER}>`,
         to: row.email,
@@ -258,9 +265,14 @@ async function revisarRegistros() {
       const info = await transporter.sendMail(message);
 
       log(
-        `Correo enviado a ${row.name} (Doccon: ${row.doccon}) | MessageId: ${info.messageId}`
+        `Correo enviado a ${row.name} (Doccon: ${
+          row.doccon
+        }) y a los agendados [${agendadosEmails.join(", ")}]  | MessageId: ${
+          info.messageId
+        }`
       );
 
+      // Guardar el correo en la carpeta "Enviados" si fue enviado correctamente
       if (info.messageId) {
         const rawMessage = await generarRaw(message);
         await guardarEnEnviados(rawMessage);
@@ -271,7 +283,7 @@ async function revisarRegistros() {
   }
 }
 
-// 🔹 Ejecutar cada minuto
+// 🔹 Ejecutar la revisión de registros cada minuto usando cron
 cron.schedule("* * * * *", async () => {
   console.log("⏳ Iniciando revisión de registros...");
   await revisarRegistros();
