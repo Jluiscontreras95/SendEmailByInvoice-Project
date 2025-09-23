@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <title>Notificación de Nuevo Albarán - Redes y Componentes</title>
+  </head>
+  <body
+    style="
+      margin: 0;
+      padding: 0;
+      background-color: #f4f6f8;
+      font-family: Arial, sans-serif;
+    "
+  >
+    <table
+      width="100%"
+      cellpadding="0"
+      cellspacing="0"
+      border="0"
+      bgcolor="#f4f6f8"
+    >
+      <tr>
+        <td align="center" style="padding: 40px 0">
+          <table
+            width="520"
+            cellpadding="0"
+            cellspacing="0"
+            border="0"
+            bgcolor="#ffffff"
+            style="border: 1px solid #e3e8ee"
+          >
+            <!-- HEADER -->
+            <tr>
+              <td
+                align="center"
+                style="padding: 20px; border-bottom: 1px solid #e0e0e0"
+              >
+                <table cellpadding="0" cellspacing="0" border="0">
+                  <tr>
+                    <td
+                      align="center"
+                      style="
+                        background-color: #1976d2;
+                        border-radius: 50%;
+                        width: 60px;
+                        height: 60px;
+                      "
+                    >
+                      <span
+                        style="
+                          color: #ffffff;
+                          font-size: 28px;
+                          font-weight: bold;
+                          display: inline-block;
+                          line-height: 60px;
+                        "
+                        >RC</span
+                      >
+                    </td>
+                  </tr>
+                </table>
+                <h2
+                  style="
+                    margin: 16px 0 4px 0;
+                    color: #1976d2;
+                    font-size: 20px;
+                    font-weight: bold;
+                    font-family: Arial, sans-serif;
+                  "
+                >
+                  Notificación de Nuevo Albarán
+                </h2>
+                <div
+                  style="
+                    color: #444444;
+                    font-size: 15px;
+                    font-weight: 500;
+                    font-family: Arial, sans-serif;
+                  "
+                >
+                  Redes y Componentes
+                </div>
+              </td>
+            </tr>
+            <!-- CONTENT -->
+            <tr>
+              <td
+                style="
+                  padding: 32px;
+                  color: #333333;
+                  font-size: 15px;
+                  line-height: 1.6;
+                  font-family: Arial, sans-serif;
+                "
+              >
+                <p style="margin: 0 0 16px 0">
+                  Estimado/a cliente <b>{{nombre}}</b>,
+                </p>
+                <p style="margin: 0 0 16px 0">
+                  Le informamos que hemos preparado el
+                  <b>albarán {{docnum}}</b>
+                  con fecha
+                  <b>{{docfec}}</b>.
+                </p>
+                <p style="margin: 0 0 16px 0">
+                  Puede consultarlo y descargarlo directamente pulsando el botón
+                  incluido en este mensaje o, si lo prefiere, accediendo a
+                  nuestro portal en la dirección
+                  <a
+                    href="https://gabinetetic.com"
+                    style="color: #1976d2; text-decoration: none"
+                    >https://gabinetetic.com</a
+                  >
+                  utilizando sus credenciales habituales.
+                </p>
+                <p style="margin: 0 0 16px 0">
+                  Quedamos a su disposición para cualquier consulta, aclaración
+                  o modificación que desee realizar sobre el mismo. <br />
+                  Atentamente, <b>Redes y Componentes Informáticos, S.L.</b>
+                </p>
+                <!-- BOTÓN -->
+                <table
+                  cellpadding="0"
+                  cellspacing="0"
+                  border="0"
+                  align="center"
+                  style="margin-top: 20px"
+                >
+                  <tr>
+                    <td bgcolor="#1976d2" style="border-radius: 4px">
+                      <a
+                        href="{{link}}"
+                        target="_blank"
+                        style="
+                          display: inline-block;
+                          padding: 12px 28px;
+                          font-size: 16px;
+                          font-weight: bold;
+                          color: #ffffff;
+                          text-decoration: none;
+                          font-family: Arial, sans-serif;
+                        "
+                      >
+                        Ver documento
+                      </a>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+            <!-- FOOTER -->
+            <tr>
+              <td
+                align="center"
+                style="
+                  padding: 20px;
+                  border-top: 1px solid #e0e0e0;
+                  color: #888888;
+                  font-size: 12px;
+                  font-family: Arial, sans-serif;
+                "
+              >
+                Este correo fue generado automáticamente por
+                <b>Redes y Componentes</b>.<br />
+                Por favor, no responda a este mensaje.
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>

@@ -26,11 +26,13 @@ function log(message, level = "INFO") {
 const templateSources = {
   notification: fs.readFileSync("templates/notification.html", "utf-8"),
   budget: fs.readFileSync("templates/notification-budget.html", "utf-8"),
+  albaran: fs.readFileSync("templates/notification-albaran.html", "utf-8"),
 };
 
 const templates = {
   notification: handlebars.compile(templateSources.notification),
   budget: handlebars.compile(templateSources.budget),
+  albaran: handlebars.compile(templateSources.albaran),
 };
 
 // 🔹 Configuración de conexión a MySQL
@@ -121,9 +123,22 @@ async function revisarRegistros() {
       ORDER BY qdocumento.doccon DESC 
     `);
 
+    const [rowsAlbaran] = await db.query(`
+      SELECT qdocumento.doccon, qdocumento.docclicod, qdocumento.docenviado, qdocumento.doceje, qdocumento.docser, qdocumento.docnum, qdocumento.docfec, qdocumento.docimptot,
+             qdocumento_fichero.qdocumento_id,
+             users.name, users.email, users.id
+      FROM qdocumento
+      JOIN users ON qdocumento.docclicod = users.usuclicod
+      JOIN qdocumento_fichero ON qdocumento.doccon = qdocumento_fichero.qdocumento_id
+      WHERE (qdocumento.docenviado = 0 OR qdocumento.docenviado IS NULL OR qdocumento.docenviado = '')
+        AND qdocumento.doctip = 'AC'
+        AND qdocumento.docfec >= '2025-09-02'
+      ORDER BY qdocumento.doccon DESC 
+    `);
+
     if (
-      (!rowsBudget && !rows) ||
-      (rowsBudget.length === 0 && rows.length === 0)
+      (!rowsBudget && !rows && !rowsAlbaran) ||
+      (rowsBudget.length === 0 && rows.length === 0 && rowsAlbaran.length === 0)
     ) {
       log("No hay registros nuevos para procesar.");
       return;
@@ -237,6 +252,81 @@ async function revisarRegistros() {
         .filter((e) => e && e.length > 0);
 
       const html = templates.budget({
+        nombre: row.name || "usuario",
+        doccon: row.doccon,
+        docid: row.qdocumento_id,
+        doceje: row.doceje,
+        docfec: fechaFormateada,
+        docimptot: row.docimptot,
+        docser: row.docser,
+        docnum: row.docnum,
+        link: link,
+      });
+
+      // Marcar como enviado antes de enviar el correo
+      await db.query("UPDATE qdocumento SET docenviado = 1 WHERE doccon = ?", [
+        row.doccon,
+      ]);
+
+      // Enviar correo
+      const recipients =
+        agendadosEmails && agendadosEmails.length > 0
+          ? agendadosEmails.join(", ")
+          : row.email;
+
+      const message = {
+        from: `"Redes y Componentes" <${process.env.MAIL_USER}>`,
+        to: recipients,
+        subject: "Notificación automática",
+        html,
+      };
+
+      const info = await transporter.sendMail(message);
+
+      log(
+        `Correo enviado a ${row.name} (Doccon: ${row.doccon}) y a los correos [${recipients}]  | MessageId: ${info.messageId}`
+      );
+
+      // Guardar el correo en la carpeta "Enviados" si fue enviado correctamente
+      if (info.messageId) {
+        const rawMessage = await generarRaw(message);
+        await guardarEnEnviados(rawMessage);
+      }
+    }
+
+    // Procesar albaranes
+    for (const row of rowsAlbaran) {
+      const fecha = new Date(row.docfec);
+      const fechaFormateada = new Intl.DateTimeFormat("es-ES", {
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric",
+      }).format(fecha);
+
+      const token = crypto.randomBytes(32).toString("hex");
+      const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+
+      const link = `https://gabinetetic.com/documentos/Albaranes?token=${token}`;
+
+      await db.query(
+        `INSERT INTO access_tokens (user_id, token, expires_at, created_at, updated_at) VALUES (?, ?, ?, NOW(), NOW())`,
+        [row.id, token, expiresAt]
+      );
+
+      log(`Token generado para usuario ${row.name}: ${token}`);
+
+      // Obtener emails agendados para este cliente
+      const [agendadosRows] = await db.query(
+        `SELECT ageema FROM qanet_clienteagenda WHERE ageclicod = ? AND agefuncion IN ('1','60')`,
+        [row.docclicod]
+      );
+
+      // Limpiar emails nulos o vacíos
+      const agendadosEmails = agendadosRows
+        .map((r) => r.ageema && r.ageema.trim())
+        .filter((e) => e && e.length > 0);
+
+      const html = templates.albaran({
         nombre: row.name || "usuario",
         doccon: row.doccon,
         docid: row.qdocumento_id,
