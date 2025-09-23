@@ -97,7 +97,7 @@ async function revisarRegistros() {
   try {
     // Consultar facturas pendientes de envío
     const [rows] = await db.query(`
-      SELECT qdocumento.doccon, qdocumento.docclicod, qdocumento.docenviado, qdocumento.doceje, qdocumento.docser, qdocumento.docnum, qdocumento.docfec, qdocumento.docimptot,
+      SELECT qdocumento.doccon, qdocumento.docclicod, qdocumento.docenviado, qdocumento.doceje, qdocumento.docser, qdocumento.docnum, qdocumento.docfec, qdocumento.docimptot, qdocumento.docusuariocorreo,
              qdocumento_fichero.qdocumento_id,
              users.name, users.email, users.id
       FROM qdocumento
@@ -111,7 +111,7 @@ async function revisarRegistros() {
 
     // Consultar presupuestos pendientes de envío
     const [rowsBudget] = await db.query(`
-      SELECT qdocumento.doccon, qdocumento.docclicod, qdocumento.docenviado, qdocumento.doceje, qdocumento.docser, qdocumento.docnum, qdocumento.docfec, qdocumento.docimptot,
+      SELECT qdocumento.doccon, qdocumento.docclicod, qdocumento.docenviado, qdocumento.doceje, qdocumento.docser, qdocumento.docnum, qdocumento.docfec, qdocumento.docimptot, qdocumento.docusuariocorreo,
              qdocumento_fichero.qdocumento_id,
              users.name, users.email, users.id
       FROM qdocumento
@@ -124,7 +124,7 @@ async function revisarRegistros() {
     `);
 
     const [rowsAlbaran] = await db.query(`
-      SELECT qdocumento.doccon, qdocumento.docclicod, qdocumento.docenviado, qdocumento.doceje, qdocumento.docser, qdocumento.docnum, qdocumento.docfec, qdocumento.docimptot,
+      SELECT qdocumento.doccon, qdocumento.docclicod, qdocumento.docenviado, qdocumento.doceje, qdocumento.docser, qdocumento.docnum, qdocumento.docfec, qdocumento.docimptot, qdocumento.docusuariocorreo,
              qdocumento_fichero.qdocumento_id,
              users.name, users.email, users.id
       FROM qdocumento
@@ -202,6 +202,7 @@ async function revisarRegistros() {
       const message = {
         from: `"Redes y Componentes" <${process.env.MAIL_USER}>`,
         to: recipients,
+        bcc: rows.docususariocorreo,
         subject: "Notificación automática",
         html,
       };
@@ -277,6 +278,7 @@ async function revisarRegistros() {
       const message = {
         from: `"Redes y Componentes" <${process.env.MAIL_USER}>`,
         to: recipients,
+        bcc: rows.docususariocorreo,
         subject: "Notificación automática",
         html,
       };
@@ -317,7 +319,7 @@ async function revisarRegistros() {
 
       // Obtener emails agendados para este cliente
       const [agendadosRows] = await db.query(
-        `SELECT ageema FROM qanet_clienteagenda WHERE ageclicod = ? AND agefuncion IN ('1','60')`,
+        `SELECT ageema FROM qanet_clienteagenda WHERE ageclicod = ? AND agefuncion IN ('3','60')`,
         [row.docclicod]
       );
 
@@ -352,6 +354,7 @@ async function revisarRegistros() {
       const message = {
         from: `"Redes y Componentes" <${process.env.MAIL_USER}>`,
         to: recipients,
+        bcc: rows.docususariocorreo,
         subject: "Notificación automática",
         html,
       };
