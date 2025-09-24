@@ -202,7 +202,7 @@ async function revisarRegistros() {
       const message = {
         from: `"Redes y Componentes" <${process.env.MAIL_USER}>`,
         to: recipients,
-        bcc: rows.docususariocorreo,
+        bcc: rows.docusuariocorreo,
         subject: "Notificación automática",
         html,
       };
@@ -278,7 +278,7 @@ async function revisarRegistros() {
       const message = {
         from: `"Redes y Componentes" <${process.env.MAIL_USER}>`,
         to: recipients,
-        bcc: rows.docususariocorreo,
+        bcc: rows.docusuariocorreo,
         subject: "Notificación automática",
         html,
       };
@@ -354,7 +354,7 @@ async function revisarRegistros() {
       const message = {
         from: `"Redes y Componentes" <${process.env.MAIL_USER}>`,
         to: recipients,
-        bcc: rows.docususariocorreo,
+        bcc: rows.docusuariocorreo,
         subject: "Notificación automática",
         html,
       };
