@@ -56,17 +56,19 @@ const transporter = nodemailer.createTransport({
   debug: false,
 });
 
-// 🔹 Configuración del cliente IMAP para guardar correos enviados
-const imapClient = new ImapFlow({
-  host: process.env.IMAP_HOST,
-  port: process.env.IMAP_PORT,
-  secure: true,
-  auth: {
-    user: process.env.MAIL_USER,
-    pass: process.env.MAIL_PASS,
-  },
-  logger: false,
-});
+// 🔹 Función para crear cliente IMAP (nueva instancia cada vez)
+function createImapClient() {
+  return new ImapFlow({
+    host: process.env.IMAP_HOST,
+    port: process.env.IMAP_PORT,
+    secure: true,
+    auth: {
+      user: process.env.MAIL_USER,
+      pass: process.env.MAIL_PASS,
+    },
+    logger: false,
+  });
+}
 
 // 🔹 Generar mensaje raw (formato RFC822) para guardar en IMAP
 async function generarRaw(message) {
@@ -92,45 +94,18 @@ async function generarRaw(message) {
 
 // 🔹 Guardar el correo enviado en la carpeta "Enviados" de IMAP
 async function guardarEnEnviados(raw) {
+  // Crear nueva instancia IMAP para cada operación
+  const imapClient = createImapClient();
+
   try {
     log(`Intentando conectar a IMAP para guardar correo...`);
     await imapClient.connect();
     log(`Conexión IMAP establecida exitosamente`);
 
-    // Listar carpetas disponibles para debug
-    const folders = await imapClient.list();
-    log(
-      `Carpetas IMAP disponibles: ${JSON.stringify(folders.map((f) => f.name))}`
-    );
-
-    // Intentar diferentes nombres de carpeta comunes
-    const possibleSentFolders = [
-      "INBOX.Sent",
-      "Sent",
-      "Sent Items",
-      "Enviados",
-      "INBOX.Enviados",
-      "Sent Messages",
-    ];
-
-    let sentFolder = null;
-    for (const folderName of possibleSentFolders) {
-      const folder = folders.find((f) => f.name === folderName);
-      if (folder) {
-        sentFolder = folderName;
-        break;
-      }
-    }
-
-    if (!sentFolder) {
-      log(
-        `No se encontró carpeta de enviados. Intentando con INBOX.Sent por defecto`,
-        "ERROR"
-      );
-      sentFolder = "INBOX.Sent";
-    }
-
+    // Usar directamente INBOX.Sent que ya sabemos que funciona
+    const sentFolder = "INBOX.Sent";
     log(`Intentando guardar en carpeta: ${sentFolder}`);
+
     await imapClient.append(sentFolder, raw, ["\\Seen"], new Date());
     log(`✅ Correo guardado exitosamente en carpeta: ${sentFolder}`);
   } catch (err) {
@@ -152,21 +127,21 @@ async function revisarRegistros() {
     // Consultar facturas pendientes de envío
     const [rows] = await db.query(`
       SELECT qdocumento.doccon, qdocumento.docclicod, qdocumento.docenviado, qdocumento.doceje, qdocumento.docser, qdocumento.docnum, qdocumento.docfec, qdocumento.docimptot, qdocumento.docusuariocorreo,
-             qdocumento_fichero.qdocumento_id,
+             qdocumento_fichero.qdocumento_id,qdocumento_fichero.docfichero,
              users.name, users.email, users.id
       FROM qdocumento
       JOIN users ON qdocumento.docclicod = users.usuclicod
       JOIN qdocumento_fichero ON qdocumento.doccon = qdocumento_fichero.qdocumento_id
       WHERE (qdocumento.docenviado = 0 OR qdocumento.docenviado IS NULL OR qdocumento.docenviado = '')
         AND qdocumento.doctip = 'FC'
-        AND qdocumento.docfec >= '2025-09-02'
+        AND qdocumento.docfec >= '2025-09-02' 
       ORDER BY qdocumento.doccon DESC 
     `);
 
     // Consultar presupuestos pendientes de envío
     const [rowsBudget] = await db.query(`
       SELECT qdocumento.doccon, qdocumento.docclicod, qdocumento.docenviado, qdocumento.doceje, qdocumento.docser, qdocumento.docnum, qdocumento.docfec, qdocumento.docimptot, qdocumento.docusuariocorreo,
-             qdocumento_fichero.qdocumento_id,
+             qdocumento_fichero.qdocumento_id, qdocumento_fichero.docfichero,
              users.name, users.email, users.id
       FROM qdocumento
       JOIN users ON qdocumento.docclicod = users.usuclicod
@@ -179,7 +154,7 @@ async function revisarRegistros() {
 
     const [rowsAlbaran] = await db.query(`
       SELECT qdocumento.doccon, qdocumento.docclicod, qdocumento.docenviado, qdocumento.doceje, qdocumento.docser, qdocumento.docnum, qdocumento.docfec, qdocumento.docimptot, qdocumento.docusuariocorreo,
-             qdocumento_fichero.qdocumento_id,
+             qdocumento_fichero.qdocumento_id, qdocumento_fichero.docfichero,
              users.name, users.email, users.id
       FROM qdocumento
       JOIN users ON qdocumento.docclicod = users.usuclicod
@@ -234,6 +209,7 @@ async function revisarRegistros() {
         docser: row.docser,
         docnum: row.docnum,
         link: link,
+        docfichero: row.docfichero,
       });
 
       // Obtener emails agendados para este cliente
@@ -332,6 +308,7 @@ async function revisarRegistros() {
         docser: row.docser,
         docnum: row.docnum,
         link: link,
+        docfichero: row.docfichero,
       });
 
       // Marcar como enviado antes de enviar el correo
@@ -424,6 +401,7 @@ async function revisarRegistros() {
         docser: row.docser,
         docnum: row.docnum,
         link: link,
+        docfichero: row.docfichero,
       });
 
       // Marcar como enviado antes de enviar el correo
@@ -480,6 +458,9 @@ async function revisarRegistros() {
 
 // 🔹 Función de test para verificar conexión IMAP y carpetas
 async function testImapConnection() {
+  // Crear nueva instancia IMAP para el test
+  const imapClient = createImapClient();
+
   try {
     log(`🔍 Iniciando test de conexión IMAP...`);
     await imapClient.connect();
