@@ -70,6 +70,32 @@ function createImapClient() {
   });
 }
 
+// 🔹 Función auxiliar para procesar guardado con retraso y manejo de errores
+async function procesarGuardadoEnviados(message, messageId) {
+  if (messageId) {
+    log(
+      `💾 Iniciando proceso de guardado en Enviados para MessageId: ${messageId}`
+    );
+    try {
+      // Pequeño retraso para evitar conflictos de timing IMAP
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+
+      const rawMessage = await generarRaw(message);
+      await guardarEnEnviados(rawMessage);
+      log(
+        `✅ Correo guardado exitosamente en Enviados (MessageId: ${messageId})`
+      );
+    } catch (saveError) {
+      log(
+        `❌ Error específico guardando en Enviados: ${saveError.message}`,
+        "ERROR"
+      );
+    }
+  } else {
+    log(`⚠️ No se guardará en Enviados - MessageId vacío o nulo`, "ERROR");
+  }
+}
+
 // 🔹 Generar mensaje raw (formato RFC822) para guardar en IMAP
 async function generarRaw(message) {
   return new Promise((resolve, reject) => {
@@ -94,11 +120,27 @@ async function generarRaw(message) {
 
 // 🔹 Guardar el correo enviado en la carpeta "Enviados" de IMAP
 async function guardarEnEnviados(raw) {
-  // Crear nueva instancia IMAP para cada operación
-  const imapClient = createImapClient();
+  let imapClient = null;
 
   try {
     log(`Intentando conectar a IMAP para guardar correo...`);
+
+    // Crear nueva instancia IMAP completamente fresca
+    imapClient = new ImapFlow({
+      host: process.env.IMAP_HOST,
+      port: process.env.IMAP_PORT,
+      secure: true,
+      auth: {
+        user: process.env.MAIL_USER,
+        pass: process.env.MAIL_PASS,
+      },
+      logger: false,
+      // Agregar configuraciones para evitar reutilización
+      socketTimeout: 30000,
+      greetingTimeout: 16000,
+      connectionTimeout: 90000,
+    });
+
     await imapClient.connect();
     log(`Conexión IMAP establecida exitosamente`);
 
@@ -112,16 +154,30 @@ async function guardarEnEnviados(raw) {
     log(`❌ Error guardando en Enviados: ${err.message}`, "ERROR");
     log(`Stack trace: ${err.stack}`, "ERROR");
   } finally {
-    try {
-      await imapClient.logout();
-      log(`Conexión IMAP cerrada`);
-    } catch (logoutErr) {
-      log(`Error cerrando conexión IMAP: ${logoutErr.message}`, "ERROR");
+    // Cerrar conexión de forma segura
+    if (imapClient) {
+      try {
+        if (imapClient.usable) {
+          await imapClient.logout();
+          log(`Conexión IMAP cerrada correctamente`);
+        } else {
+          log(`Conexión IMAP ya estaba cerrada`);
+        }
+      } catch (logoutErr) {
+        log(`Error cerrando conexión IMAP: ${logoutErr.message}`, "ERROR");
+        // Forzar cierre si hay problemas
+        try {
+          imapClient.close();
+        } catch (closeErr) {
+          log(`Error forzando cierre IMAP: ${closeErr.message}`, "ERROR");
+        }
+      } finally {
+        // Limpiar referencia
+        imapClient = null;
+      }
     }
   }
-}
-
-// 🔹 Revisar y procesar nuevos registros de facturas y presupuestos
+} // 🔹 Revisar y procesar nuevos registros de facturas y presupuestos
 async function revisarRegistros() {
   try {
     // Consultar facturas pendientes de envío
@@ -245,25 +301,7 @@ async function revisarRegistros() {
       );
 
       // Guardar el correo en la carpeta "Enviados" si fue enviado correctamente
-      if (info.messageId) {
-        log(
-          `💾 Iniciando proceso de guardado en Enviados para MessageId: ${info.messageId}`
-        );
-        try {
-          const rawMessage = await generarRaw(message);
-          await guardarEnEnviados(rawMessage);
-          log(
-            `✅ Correo guardado exitosamente en Enviados (MessageId: ${info.messageId})`
-          );
-        } catch (saveError) {
-          log(
-            `❌ Error específico guardando en Enviados: ${saveError.message}`,
-            "ERROR"
-          );
-        }
-      } else {
-        log(`⚠️ No se guardará en Enviados - MessageId vacío o nulo`, "ERROR");
-      }
+      await procesarGuardadoEnviados(message, info.messageId);
     }
 
     // Procesar presupuestos
@@ -338,25 +376,7 @@ async function revisarRegistros() {
       );
 
       // Guardar el correo en la carpeta "Enviados" si fue enviado correctamente
-      if (info.messageId) {
-        log(
-          `💾 Iniciando proceso de guardado en Enviados para MessageId: ${info.messageId}`
-        );
-        try {
-          const rawMessage = await generarRaw(message);
-          await guardarEnEnviados(rawMessage);
-          log(
-            `✅ Correo guardado exitosamente en Enviados (MessageId: ${info.messageId})`
-          );
-        } catch (saveError) {
-          log(
-            `❌ Error específico guardando en Enviados: ${saveError.message}`,
-            "ERROR"
-          );
-        }
-      } else {
-        log(`⚠️ No se guardará en Enviados - MessageId vacío o nulo`, "ERROR");
-      }
+      await procesarGuardadoEnviados(message, info.messageId);
     }
 
     // Procesar albaranes
@@ -431,25 +451,7 @@ async function revisarRegistros() {
       );
 
       // Guardar el correo en la carpeta "Enviados" si fue enviado correctamente
-      if (info.messageId) {
-        log(
-          `💾 Iniciando proceso de guardado en Enviados para MessageId: ${info.messageId}`
-        );
-        try {
-          const rawMessage = await generarRaw(message);
-          await guardarEnEnviados(rawMessage);
-          log(
-            `✅ Correo guardado exitosamente en Enviados (MessageId: ${info.messageId})`
-          );
-        } catch (saveError) {
-          log(
-            `❌ Error específico guardando en Enviados: ${saveError.message}`,
-            "ERROR"
-          );
-        }
-      } else {
-        log(`⚠️ No se guardará en Enviados - MessageId vacío o nulo`, "ERROR");
-      }
+      await procesarGuardadoEnviados(message, info.messageId);
     }
   } catch (err) {
     log(`Error revisando registros: ${err.message}`, "ERROR");
